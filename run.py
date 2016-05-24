@@ -20,8 +20,7 @@ params = [(i, config) for i in range(2)]
 #         print a
 
 evoworker.initialize(config)
-evoworker.work(params)
-# result=evoworker.work(params)
-# if result:
-#     print 'finished'
+result=evoworker.work(params)
+if result:
+    print 'finished'
 

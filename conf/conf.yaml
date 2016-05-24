@@ -2,7 +2,7 @@ SERVER: http://0.0.0.0:5060
 CHROMOSOME_LENGTH: 512
 SAMPLE_SIZE: 100
 POPULATION_SIZE: 100
-WORKER_GENERATIONS: 100
+WORKER_GENERATIONS: 20
 MAX_SAMPLES: 2
 
 MUTATION_FLIP_PB: 0.05
@@ -14,8 +14,8 @@ PARAMS: ['best_of_each_specie', 2, 'yes']
 PROBLEM: "Housing"
 DIRECCION: "./data_corridas/Housing/train_%d_%d.txt"
 
-neat_cx: False
-neat_alg: False
+neat_cx: True
+neat_alg: True
 neat_pelit: 0.5
 neat_h: 0.15
 LS_FLAG: False

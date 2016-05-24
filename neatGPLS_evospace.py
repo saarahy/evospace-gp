@@ -4,7 +4,7 @@ import numpy as np
 import copy
 from deap import tools
 from neat_operators import neatGP
-from speciation import ind_specie, species, specie_parents_child
+from speciation import ind_specie, species, specie_parents_child, count_species, list_species
 from fitness_sharing import SpeciesPunishment
 from ParentSelection import p_selection
 from tree_subt import add_subt, add_subt_cf
@@ -64,67 +64,13 @@ def varOr(population, toolbox, cxpb, mutpb):
 
     return offspring
 
+def evo_species(population, neat_h):
+    species(population, neat_h)
+    num_Species=count_species(population)
+    specie_list=list_species(population)
+    return  num_Species, specie_list
 
-def varAnd(population, toolbox, cxpb, mutpb):
-    """Part of an evolutionary algorithm applying only the variation part
-    (crossover **and** mutation). The modified individuals have their
-    fitness invalidated. The individuals are cloned so returned population is
-    independent of the input population.
-
-    :param population: A list of individuals to vary.
-    :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
-                    operators.
-    :param cxpb: The probability of mating two individuals.
-    :param mutpb: The probability of mutating an individual.
-    :returns: A list of varied individuals that are independent of their
-              parents.
-
-    The variation goes as follow. First, the parental population
-    :math:`P_\mathrm{p}` is duplicated using the :meth:`toolbox.clone` method
-    and the result is put into the offspring population :math:`P_\mathrm{o}`.
-    A first loop over :math:`P_\mathrm{o}` is executed to mate pairs of consecutive
-    individuals. According to the crossover probability *cxpb*, the
-    individuals :math:`\mathbf{x}_i` and :math:`\mathbf{x}_{i+1}` are mated
-    using the :meth:`toolbox.mate` method. The resulting children
-    :math:`\mathbf{y}_i` and :math:`\mathbf{y}_{i+1}` replace their respective
-    parents in :math:`P_\mathrm{o}`. A second loop over the resulting
-    :math:`P_\mathrm{o}` is executed to mutate every individual with a
-    probability *mutpb*. When an individual is mutated it replaces its not
-    mutated version in :math:`P_\mathrm{o}`. The resulting
-    :math:`P_\mathrm{o}` is returned.
-
-    This variation is named *And* beceause of its propention to apply both
-    crossover and mutation on the individuals. Note that both operators are
-    not applied systematicaly, the resulting individuals can be generated from
-    crossover only, mutation only, crossover and mutation, and reproduction
-    according to the given probabilities. Both probabilities should be in
-    :math:`[0, 1]`.
-    """
-    offspring = [toolbox.clone(ind) for ind in population]
-
-    # Apply crossover and mutation on the offspring
-    for i in range(1, len(offspring), 2):
-        if random.random() < cxpb:
-            offspring[i-1], offspring[i] = toolbox.mate(offspring[i-1], offspring[i])
-            del offspring[i-1].fitness.values, offspring[i].fitness.values
-            offspring[i-1].bestspecie_set(0), offspring[i].bestspecie_set(0)
-            offspring[i-1].LS_applied_set(0), offspring[i].LS_applied_set(0)
-            offspring[i-1].LS_fitness_set(None), offspring[i].LS_fitness_set(None)
-            offspring[i-1].off_cx_set(1), offspring[i].off_cx_set(1)
-
-    for i in range(len(offspring)):
-        if random.random() < mutpb:
-            offspring[i], = toolbox.mutate(offspring[i])
-            del offspring[i].fitness.values
-            offspring[i].bestspecie_set(0)
-            offspring[i].LS_applied_set(0)
-            offspring[i].LS_fitness_set(None)
-            offspring[i].off_mut_set(1)
-
-    return offspring
-
-
-def neat_GP_LS(population, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h,neat_pelit, LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,n_corr, num_p, params, direccion, problem,stats=None,
+def evo_neat_GP_LS(population, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h,neat_pelit, LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,n_corr, num_p, params, direccion, problem,stats=None,
              halloffame=None, verbose=__debug__):
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
@@ -209,9 +155,9 @@ def neat_GP_LS(population, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h
         Matrix[:, 6] = 0.
 
     #Creation of the species
-    if neat_alg:
-        species(population,neat_h)
-        ind_specie(population)
+    # if neat_alg:
+    #     species(population,neat_h)
+    #     ind_specie(population)
 
     if funcEval.LS_flag:
         for ind in population:

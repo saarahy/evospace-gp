@@ -4,12 +4,14 @@ import csv
 import funcEval
 import numpy as np
 import neatGPLS
+import neatGPLS_evospace
 import init_conf
 import os.path
 from deap import base
 from deap import creator
 from deap import tools
 from deap import gp
+from speciation import getInd_perSpecie
 import gp_conf as neat_gp
 from my_operators import safe_div, mylog, mypower2, mypower3, mysqrt, myexp
 
@@ -71,7 +73,7 @@ def initialize(config):
     server.initialize()
     #server.initialize(None)
 
-    sample = [{"chromosome":str(ind), "id":None, "fitness":{"DefaultContext":0.0}} for ind in pop]
+    sample = [{"chromosome":str(ind), "id":None, "fitness":{"DefaultContext":0.0}, "params":[0.0]} for ind in pop]
     init_pop = {'sample_id': 'None' , 'sample':   sample}
     server.put_sample(init_pop)
     #server.putSample(init_pop)
@@ -184,71 +186,22 @@ def evolve(sample_num, config):
 
     begin =   time.time()
     print "inicio del proceso"
-    pop, log = neatGPLS.neat_GP_LS(pop, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
-                                   funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
-                                   n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None, verbose=True)
-    # Evaluate the entire population
-    #fitnesses = map(toolbox.evaluate, pop)
-    # for ind, fit in zip(pop, fitnesses):
-    #     ind.fitness.values = fit
-    #
-    #
-    # total_evals = len(pop)
-    # best_first   = None
-    # # Begin the evolution
-    #
-    # for g in range(config["WORKER_GENERATIONS"]):
-    #     # Select the next generation individuals
-    #     offspring = toolbox.select(pop, len(pop))
-    #     # Clone the selected individuals
-    #     offspring = map(toolbox.clone, offspring)
-    #
-    #     # Apply crossover and mutation on the offspring
-    #     for child1, child2 in zip(offspring[::2], offspring[1::2]):
-    #         if random.random() < config["CXPB"]:
-    #             toolbox.mate(child1, child2)
-    #             del child1.fitness.values
-    #             del child2.fitness.values
-    #
-    #     for mutant in offspring:
-    #         if random.random() < config["MUTPB"]:
-    #             toolbox.mutate(mutant)
-    #             del mutant.fitness.values
-    #
-    #     # Evaluate the individuals with an invalid fitness
-    #     invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-    #     fitnesses = map(toolbox.evaluate, invalid_ind)
-    #     for ind, fit in zip(invalid_ind, fitnesses):
-    #         ind.fitness.values = fit
-    #
-    #     total_evals+=len(invalid_ind)
-    #     #print "  Evaluated %i individuals" % len(invalid_ind),
-    #
-    #     # The population is entirely replaced by the offspring
-    #     pop[:] = offspring
-    #
-    #     # Gather all the fitnesses in one list and print the stats
-    #     fits = [ind.fitness.values[0] for ind in pop]
-    #
-    #     #length = len(pop)
-    #     #mean = sum(fits) / length
-    #     #sum2 = sum(x*x for x in fits)
-    #     #std = abs(sum2 / length - mean**2)**0.5
-    #
-        # best = max(fits)
-        # if not best_first:
-        #     best_first = best
-        #
-        # if best >= config["CHROMOSOME_LENGTH"]:
-        #     break
-    #
-    #     #print  "  Min %s" % min(fits) + "  Max %s" % max(fits)+ "  Avg %s" % mean + "  Std %s" % std
-    #
-    # print "-- End of (successful) evolution --"
-    #
+
+    num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
+    for specie in specie_list:
+        pop_gpo=getInd_perSpecie(specie, pop)
+        pop_gpo_, log = neatGPLS.neat_GP_LS(pop_gpo, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
+                                       funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
+                                       n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None,
+                                       verbose=True)
+
+    # pop, log = neatGPLS.neat_GP_LS(pop, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
+    #                                funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
+    #                                n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None, verbose=True)
+
     putback =  time.time()
     #
-    sample = [ {"chromosome":str(ind),"id":None, "fitness":{"DefaultContext":ind.fitness.values[0]} } for ind in pop]
+    sample = [ {"chromosome":str(ind),"id":None, "fitness":{"DefaultContext":ind.fitness.values[0]}, "params":[x for x in ind.get_params()]if funcEval.LS_flag else [0.0] } for ind in pop]
     #print sample
     evospace_sample['sample'] = sample
     server.put_sample(evospace_sample)

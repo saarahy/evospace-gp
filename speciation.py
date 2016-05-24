@@ -1,5 +1,6 @@
 from deap import base, creator, gp, tools
 from measure_tree import *
+import numpy as np
 #Inicializa las poblacion con una sola especie
 def init_species(population):
     for ind in population:
@@ -64,6 +65,35 @@ def get_specie_ind(individuo, population):
         if ind.get_specie()==specie:
             cont+=1
     return cont
+
+
+#regresa el grupo de individuos en una especie dada
+def getInd_perSpecie(specie, population):
+    individuals=[]
+    for ind in population:
+        if ind.get_specie()==specie:
+            individuals.append(ind)
+    return individuals
+
+
+#regresa el grupo de individuos en una especie de un individuo dado
+def getInd_perIndividual(individuo, population):
+    #cont=0
+    individuals=[]
+    specie=individuo.get_specie()
+    for ind in population:
+        if ind.get_specie()==specie:
+            #cont+=1
+            individuals.append(ind)
+    return individuals
+
+#funcion para contar los individuos de una especie
+def list_species(population):
+    specie2 = list()
+    for ind in population:
+        specie2.append(ind.get_specie())
+    specie_list = np.unique(specie2)
+    return specie_list
 
 #funcion para asignar el numero de individuos
 #en la especie, al individuo de esa misma especie
