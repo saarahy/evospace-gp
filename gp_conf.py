@@ -110,8 +110,10 @@ class PrimitiveTree(gp.PrimitiveTree, neat):
                 type_ = ret_types.popleft()
             else:
                 type_ = None
-
-            if token in pset.mapping:
+            #type_=type(token)
+            if token in pset.mapping: #or type_ is float:
+                #if type_ is float:
+                    #primitive = pset.mapping['rand101']
                 primitive = pset.mapping[token]
 
                 if len(ret_types) != 0 and primitive.ret != type_:
@@ -137,7 +139,8 @@ class PrimitiveTree(gp.PrimitiveTree, neat):
                                     .format(token, type(token), type_))
 
                 expr.append(Terminal(token, False, type_))
-        return cls(expr)
+        x=cls(expr)
+        return x
 
     @property
     def height(self):
@@ -338,6 +341,8 @@ def mutUniform(individual, expr, pset):
     index = random.randrange(len(individual))
     slice_ = individual.searchSubtree(index)
     type_ = individual[index].ret
+    if type_ is float:
+        type_ = None
     xp = expr(pset=pset, type_=type_)
     if funcEval.LS_flag:
             a=slice_.start

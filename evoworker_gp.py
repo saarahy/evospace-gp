@@ -46,7 +46,7 @@ creator.create("Individual", neat_gp.PrimitiveTree, fitness=creator.FitnessMin, 
 def getToolBox(config):
     toolbox = base.Toolbox()
     # Attribute generator
-    toolbox.register("expr", gp.genFull, pset=pset, min_=0, max_=3)
+    toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=0, max_=6)
     # Structure initializers
     toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.expr)
     toolbox.register("population", init_conf.initRepeat, list, toolbox.individual)
@@ -54,7 +54,7 @@ def getToolBox(config):
     # Operator registering
     toolbox.register("select", tools.selTournament, tournsize=7)
     toolbox.register("mate", neat_gp.cxSubtree)
-    toolbox.register("expr_mut", gp.genFull, min_=0, max_=3)
+    toolbox.register("expr_mut", gp.genHalfAndHalf, min_=0, max_=6)
     toolbox.register("mutate", neat_gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
     #toolbox.register("evaluate", evalSymbReg, points=data_[0])
     #toolbox.register("evaluate_test", evalSymbReg, points=data_[1])
@@ -67,8 +67,6 @@ def getToolBox(config):
 
 def initialize(config):
     pop = getToolBox(config).population(n=config["POPULATION_SIZE"])
-    for ind in pop:
-        print ind
     server = evospace.Population("pop")#jsonrpclib.Server(config["SERVER"])
     server.initialize()
     #server.initialize(None)
@@ -185,10 +183,10 @@ def evolve(sample_num, config):
     data_(n_corr, n_prob, toolbox)
 
     begin =   time.time()
+    print "inicio del proceso"
     pop, log = neatGPLS.neat_GP_LS(pop, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
                                    funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
-                                   n_corr, n_prob, params, direccion, problem, stats=None
-                                   , halloffame=None, verbose=True)
+                                   n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None, verbose=True)
     # Evaluate the entire population
     #fitnesses = map(toolbox.evaluate, pop)
     # for ind, fit in zip(pop, fitnesses):
@@ -237,12 +235,12 @@ def evolve(sample_num, config):
     #     #sum2 = sum(x*x for x in fits)
     #     #std = abs(sum2 / length - mean**2)**0.5
     #
-    #     best = max(fits)
-    #     if not best_first:
-    #         best_first = best
-    #
-    #     if best >= config["CHROMOSOME_LENGTH"]:
-    #         break
+        # best = max(fits)
+        # if not best_first:
+        #     best_first = best
+        #
+        # if best >= config["CHROMOSOME_LENGTH"]:
+        #     break
     #
     #     #print  "  Min %s" % min(fits) + "  Max %s" % max(fits)+ "  Avg %s" % mean + "  Std %s" % std
     #
@@ -250,16 +248,17 @@ def evolve(sample_num, config):
     #
     putback =  time.time()
     #
-    sample = [ {"chromosome":ind,"id":None, "fitness":{"DefaultContext":ind.fitness.values[0]} } for ind in pop]
-    print sample
-    # evospace_sample['sample'] = sample
-    # server.put_sample(evospace_sample)
-    # #server.putSample(evospace_sample)
-    # best_ind = tools.selBest(pop, 1)[0]
+    sample = [ {"chromosome":str(ind),"id":None, "fitness":{"DefaultContext":ind.fitness.values[0]} } for ind in pop]
+    #print sample
+    evospace_sample['sample'] = sample
+    server.put_sample(evospace_sample)
+    #server.putSample(evospace_sample)
+    best_ind = tools.selBest(pop, 1)[0]
     #
-    # return best >= config["CHROMOSOME_LENGTH"] , [config["CHROMOSOME_LENGTH"],best, sample_num, round(time.time() - start, 2),
-    #                                     round(begin - start, 2), round(putback - begin, 2),
-    #                                     round(time.time() - putback, 2), total_evals, best_first, best_ind]
+    best = config["CHROMOSOME_LENGTH"], [config["CHROMOSOME_LENGTH"], sample_num, round(time.time() - start, 2),
+                                         round(begin - start, 2), round(putback - begin, 2),
+                                         round(time.time() - putback, 2), best_ind]
+    return best
     #
 
 def work(params):
