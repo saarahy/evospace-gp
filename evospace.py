@@ -9,9 +9,9 @@ AUTO_RESPAWN = True
 RESPAWN='REINSERT'
 #RESPAWN='RANDOM'
 
-HOST="127.0.0.1"
+HOST="evopool.redis.cache.windows.net"
 PORT=6379
-
+PASS="/0WAE0z5wj42lRd2RcfKxRn6s0Pnpm74yEq2gO4e884="
 import os, redis, random
 
 ##REDISCLOUD
@@ -22,7 +22,7 @@ if os.environ.get('REDISTOGO_URL'):
     r = redis.Redis(host=url.hostname, port=url.port, password=url.password)
 #LOCAL
 else:
-    r = redis.Redis(host=HOST, port=PORT)
+    r = redis.Redis(host=HOST, port=PORT,password=PASS)
 
 
 

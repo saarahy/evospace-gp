@@ -1,31 +1,26 @@
-SERVER: http://0.0.0.0:5060
-CHROMOSOME_LENGTH: 512
-SAMPLE_SIZE: 100
-POPULATION_SIZE: 100
-WORKER_GENERATIONS: 20
-MAX_SAMPLES: 2
-
-MUTATION_FLIP_PB: 0.05
-TOURNAMENT_SIZE: 2
 CXPB: 0.9
-MUTPB: 0.1
-PARAMS: ['best_of_each_specie', 2, 'yes']
-
-PROBLEM: "Housing"
-DIRECCION: "./data_corridas/Housing/train_%d_%d.txt"
-
-neat_cx: True
-neat_alg: True
-neat_pelit: 0.5
-neat_h: 0.15
-LS_FLAG: False
+DIRECCION: ./data_corridas/Housing/train_%d_%d.txt
+LS_FLAG: false
 LS_SELECT: 9
-
-num_salto: 500
+MAX_SAMPLES: 1
+MUTATION_FLIP_PB: 0.05
+MUTPB: 0.1
+PARAMS: [best_of_each_specie, 2, 'yes']
+POPULATION_SIZE: 100
+PROBLEM: Housing
+SAMPLE_SIZE: 100
+SERVER: https://stormy-waters-38139.herokuapp.com/
+TOURNAMENT_SIZE: 2
+WORKER_GENERATIONS: 30
 cont_evalf: 100000
-save_matrix: True
-gen_matrix: False
-
-n_corr: 30
+gen_matrix: true
+n_corr: 17
 n_problem: 3
-
+neat_alg: false
+neat_cx: false
+neat_h: 0.15
+neat_pelit: 0.5
+num_salto: 500
+problem: Housing
+save_matrix: true
+set_specie: 3
