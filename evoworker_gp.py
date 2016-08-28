@@ -69,14 +69,41 @@ def getToolBox(config):
 
 def initialize(config):
     pop = getToolBox(config).population(n=config["POPULATION_SIZE"])
-    server = evospace.Population("pop")#jsonrpclib.Server(config["SERVER"])
+    server = jsonrpclib.Server(config["SERVER"]) #evospace.Population("pop")
     server.initialize()
     #server.initialize(None)
+    neat_alg = config["neat_alg"]
+    if neat_alg:
+        a,b=speciation_init(config, server, pop)
+        return a,b
+    else:
+        sample = [{"chromosome":str(ind), "id":None, "fitness":{"DefaultContext":0.0}, "params":[0.0], "specie":1} for ind in pop]
+        init_pop = {'sample_id': 'None' , 'sample':   sample}
+        server.put_sample(init_pop)
+        server.putZample(init_pop)
+        return 1,1
 
-    sample = [{"chromosome":str(ind), "id":None, "fitness":{"DefaultContext":0.0}, "params":[0.0]} for ind in pop]
-    init_pop = {'sample_id': 'None' , 'sample':   sample}
-    server.put_sample(init_pop)
-    #server.putSample(init_pop)
+def speciation_init(config,server, pop):
+    neat_h=0.15
+    num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
+    sample = [{"chromosome": str(ind), "id": None, "fitness": {"DefaultContext": 0.0}, "params": [0.0],  "specie":ind.get_specie()} for ind in pop]
+    evospace_sample = {'sample_id': 'None', 'sample': sample}
+    server.putZample(evospace_sample)
+    return num_Specie, specie_list
+
+def speciation(config):
+    server = jsonrpclib.Server(config["SERVER"])
+    #numsampl=server.getSampleNumber()
+    evospace_sample = server.getPopulation()
+    pop = [creator.Individual(neat_gp.PrimitiveTree.from_string(cs['chromosome'], pset)) for cs in
+           evospace_sample['sample']]
+    neat_h=0.15
+    num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
+    sample = [{"chromosome": str(ind), "id": None, "fitness": {"DefaultContext": 0.0}, "params": [0.0],  "specie":ind.get_specie()} for ind in pop]
+    evospace_sample = {'sample_id': 'None', 'sample': sample}
+    server.putZample(evospace_sample)
+    return num_Specie, specie_list
+
 
 
 def evalSymbReg(individual, points, toolbox):
@@ -158,13 +185,15 @@ def evolve(sample_num, config):
 
 
 
-    server = evospace.Population("pop")
-    #server = jsonrpclib.Server(config["SERVER"])
+    #server = evospace.Population("pop")
+    server = jsonrpclib.Server(config["SERVER"])
 
-    evospace_sample = server.get_sample(config["SAMPLE_SIZE"])
-    #evospace_sample = server.getSample(config["SAMPLE_SIZE"])
+    #evospace_sample = server.get_sample(config["SAMPLE_SIZE"])
+    evospace_sample = server.getSample(config["SAMPLE_SIZE"])
+    print 'hey'
+    #evospace_specie= server.getSample_specie(config["set_specie"])
 
-    pop = [ creator.Individual(neat_gp.PrimitiveTree.from_string(cs['chromosome'], pset)) for cs in evospace_sample['sample']]
+    pop = [creator.Individual(neat_gp.PrimitiveTree.from_string(cs['chromosome'], pset)) for cs in evospace_sample['sample']]
 
     cxpb = config["CXPB"]#0.7  # 0.9
     mutpb = config["MUTPB"]#0.3  # 0.1
@@ -184,31 +213,33 @@ def evolve(sample_num, config):
 
     data_(n_corr, n_prob, toolbox)
 
-    begin =   time.time()
+    begin =time.time()
     print "inicio del proceso"
 
-    num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
-    for specie in specie_list:
-        pop_gpo=getInd_perSpecie(specie, pop)
-        pop_gpo_, log = neatGPLS.neat_GP_LS(pop_gpo, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
+    if neat_alg:
+        num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
+        for specie in specie_list:
+            pop_gpo=getInd_perSpecie(specie, pop)
+            pop, log = neatGPLS.neat_GP_LS(pop_gpo, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
+                                           funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
+                                           n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None,
+                                           verbose=True)
+    else:
+        pop, log = neatGPLS.neat_GP_LS(pop, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
                                        funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
-                                       n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None,
-                                       verbose=True)
-
-    # pop, log = neatGPLS.neat_GP_LS(pop, toolbox, cxpb, mutpb, ngen, neat_alg, neat_cx, neat_h, neat_pelit,
-    #                                funcEval.LS_flag, LS_select, cont_evalf, num_salto, SaveMatrix, GenMatrix, pset,
-    #                                n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None, verbose=True)
+                                       n_corr, n_prob, params, direccion, problem, stats=None, halloffame=None, verbose=True)
 
     putback =  time.time()
     #
-    sample = [ {"chromosome":str(ind),"id":None, "fitness":{"DefaultContext":ind.fitness.values[0]}, "params":[x for x in ind.get_params()]if funcEval.LS_flag else [0.0] } for ind in pop]
+    sample = [{"chromosome":str(ind),"id":None, "fitness":{"DefaultContext":[ind.fitness.values[0].item() if isinstance(ind.fitness.values[0], np.float64) else ind.fitness.values[0]]}, "params":[x for x in ind.get_params()]if funcEval.LS_flag else [0.0] } for ind in pop]
     #print sample
-    evospace_sample['sample'] = sample
-    server.put_sample(evospace_sample)
-    #server.putSample(evospace_sample)
+    evospace_sample = {'sample_id': 'None', 'sample': sample}
+    #evospace_sample['sample'] = sample
+    #server.put_sample(evospace_sample)
+    server.putZample(evospace_sample)
     best_ind = tools.selBest(pop, 1)[0]
     #
-    best = config["CHROMOSOME_LENGTH"], [config["CHROMOSOME_LENGTH"], sample_num, round(time.time() - start, 2),
+    best = [len(best_ind), sample_num, round(time.time() - start, 2),
                                          round(begin - start, 2), round(putback - begin, 2),
                                          round(time.time() - putback, 2), best_ind]
     return best
@@ -217,15 +248,18 @@ def evolve(sample_num, config):
 def work(params):
     worker_id = params[0][0]
     config = params[0][1]
-    #server = jsonrpclib.Server(config["SERVER"])
+    server = jsonrpclib.Server(config["SERVER"])
     results = []
     for sample_num in range(config["MAX_SAMPLES"]):
         # if int(server.found(None)):
-        #     break
+        #      break
         # else:
-            gen_data = evolve(sample_num, config)
+        gen_data = evolve(sample_num, config)
+
             # if gen_data[0]:
-            #     evospace.found_it(None)
-            results.append([worker_id] + gen_data[1])
+            #      server.found_it(None)
+        #if server.getSampleNumber()>4:
+            #num_Specie, specie_list = neatGPLS_evospace.evo_species(pop, neat_h)
+        results.append([worker_id] + gen_data)
     return results
 
