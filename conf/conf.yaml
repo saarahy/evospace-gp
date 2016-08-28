@@ -9,7 +9,7 @@ PARAMS: [best_of_each_specie, 2, 'yes']
 POPULATION_SIZE: 100
 PROBLEM: Housing
 SAMPLE_SIZE: 100
-SERVER: https://stormy-waters-38139.herokuapp.com/
+SERVER: http://stormy-waters-38139.herokuapp.com/
 TOURNAMENT_SIZE: 2
 WORKER_GENERATIONS: 30
 cont_evalf: 100000
